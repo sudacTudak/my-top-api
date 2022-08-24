@@ -4,38 +4,68 @@ import {
   Delete,
   Get,
   HttpCode,
+  NotFoundException,
   Param,
   Patch,
   Post,
+  UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
+import { CreateProductDto } from './dto/create-product.dto';
 import { FindProductDto } from './dto/find-product.dto';
+import { PRODUCT_NOT_FOUND_ERROR } from './product.constants';
 import { ProductModel } from './product.model';
+import { ProductService } from './product.service';
 
 @Controller('product')
 export class ProductController {
+  constructor(private readonly productService: ProductService) {}
+
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(new ValidationPipe())
   @Post('create')
-  async create(@Body() dto: Omit<ProductModel, '_id'>) {
-    return null;
+  async create(@Body() dto: CreateProductDto) {
+    return await this.productService.create(dto);
   }
 
   @Get(':id')
-  async get(@Param('id') id: string): Promise<ProductModel | null> {
-    return null;
+  async get(@Param('id') id: string): Promise<ProductModel> {
+    const product = await this.productService.findById(id);
+    if (!product) {
+      throw new NotFoundException(PRODUCT_NOT_FOUND_ERROR);
+    }
+
+    return product;
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async delete(@Param('id') id: string) {
-    return null;
+    const deletedProduct = await this.productService.deleteById(id);
+    if (!deletedProduct) {
+      throw new NotFoundException(PRODUCT_NOT_FOUND_ERROR);
+    }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  async patch(@Param('id') id: string, @Body() dto: ProductModel) {
-    return null;
+  async patch(
+    @Param('id') id: string,
+    @Body() dto: CreateProductDto,
+  ): Promise<ProductModel> {
+    const updatedProduct = await this.productService.updateById(id, dto);
+    if (!updatedProduct) {
+      throw new NotFoundException(PRODUCT_NOT_FOUND_ERROR);
+    }
+    return updatedProduct;
   }
 
-  @Post()
+  @UsePipes(new ValidationPipe())
+  @Post('find')
   @HttpCode(200)
   async find(@Body() dto: FindProductDto) {
-    return null;
+    return this.productService.findWithReviews(dto);
   }
 }
