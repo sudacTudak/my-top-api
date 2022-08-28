@@ -1,0 +1,10 @@
+version: '3'
+services:
+  my.top.api:
+    image: my-top-api:latest
+    container_name: my_top_api
+    restart: always
+    ports:
+      - 8080:8080
+    volumes:
+      - ./.env:/opt/app/.env
