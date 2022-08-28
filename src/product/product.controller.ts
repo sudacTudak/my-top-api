@@ -31,6 +31,7 @@ export class ProductController {
     return await this.productService.create(dto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   async get(@Param('id', IdValidationPipe) id: string): Promise<ProductModel> {
     const product = await this.productService.findById(id);
